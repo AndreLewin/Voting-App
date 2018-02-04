@@ -1,46 +1,42 @@
-const express = require('express');
-const webpack = require('webpack');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+require('dotenv').load();
 
 module.exports = {
     entry: {
-        app: [__dirname + '/client/index.jsx']
+        app: './client/index.jsx'
     },
     output: {
-        filename: '[name].js',
-        publicPath: 'http://localhost:3000/assets',
-        path: '/',
+        filename: 'assets/[name].js',
+        publicPath: `http://localhost:${process.env.PORT}/`,
+        // publicPath: '/',
+        path: '/'
     },
     devServer: {
+        historyApiFallback: true,
+        contentBase: './',
+        hot: true,
+        port: process.env.PORT,
+    },
+    module: {
+        rules: [
+            {
+              test: /\.(js|jsx)$/,
+              loaders: 'babel-loader',
+              exclude: /node_modules/,
+              query: {
+                presets: ['react', 'stage-0']
+              }
+            },
+            {test: /\.css$/, use: ['style-loader', 'css-loader']},
+            {test: /\.scss$/, use: ["style-loader", "css-loader", "sass-loader"]},
+        ]
+    }
+};
+
+/*
+
         hot: true,
         inline: true,
         watchOptions: {
             ignored: ['node_modules/', 'test/', 'server/', 'test/', 'public/'],
         },
-    },
-    module: {
-        rules: [
-            {
-                test: /\.(css|scss)$/,
-                exclude: /(node_modules)/,
-                use: ExtractTextPlugin.extract({
-                    fallback: 'style-loader',
-                    use: ['css-loader?url=false', 'sass-loader']
-                })
-            },
-            {
-                test: /\.(js|jsx)$/,
-                exclude: /(node_modules)/,
-                use: {
-                    loader: 'babel-loader',
-                    options: {
-                        presets: ['react', 'stage-0']
-                    }
-                }
-            }
-        ]
-    },
-    plugins: [
-        new ExtractTextPlugin('style.css'),
-    ]
-}
+ */

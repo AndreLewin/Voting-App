@@ -30,7 +30,7 @@ class NewPoll extends React.Component {
         });
     } else {
       // The user has no token, they must first log in to get one
-      window.location.replace('https://vocxdona-apo.glitch.me/#/login'); 
+      window.location.replace(location.origin+'/#/login');
     }
   }
 
@@ -56,7 +56,7 @@ class NewPoll extends React.Component {
     
     axios.post('/polls/new', { question: question, choices: choices }, { headers: { Authorization: localStorage.getItem("token") } } )
       .then((response) => {
-        window.location.replace('https://vocxdona-apo.glitch.me/#/poll/' + response.data.poll_id);
+        window.location.replace(location.origin+'/#/poll/' + response.data.poll_id);
       })
       .catch((error) => {
         console.log(error);

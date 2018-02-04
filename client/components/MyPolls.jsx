@@ -37,7 +37,7 @@ class MyPolls extends React.Component {
         })  
     } else {
       // The user has no token, they must first log in to get one
-      window.location.replace('https://vocxdona-apo.glitch.me/#/login'); 
+      window.location.replace(location.origin+'/#/login');
     }
   }
   

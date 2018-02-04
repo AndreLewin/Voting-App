@@ -1,28 +1,32 @@
 const express = require('express');
 const app = express();
 const webpack = require('webpack');
-const webpackDevMiddleware = require('webpack-dev-middleware'); // I still don't understand the point of this
-const bodyParser = require('body-parser'); // Necessary for reading the body
+const webpackDevMiddleware = require('webpack-dev-middleware');
+const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const bcrypt = require('bcrypt');
+
+const path = require('path');
 
 const User = require('./model/User');
 const Poll = require('./model/Poll');
 const Choice = require('./model/Choice');
 const Vote = require('./model/Vote');
 
-// Configure Mongoose
-mongoose.connect(process.env.DB_URI, { useMongoClient: true });
-mongoose.Promise = global.Promise; 
+// Get process.env.VARIABLES from .env
+require('dotenv').load();
 
+// Make the content of ./public accessible from URL
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static('public'));
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json())
 
-// Configure webpack 
+// Use and configure body-parser for reading the body of HTTP requests
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+// Use the webpack dev server as a middleware, so we can launch it from this file
 const config = require('../webpack.dev.config');
 const compiler = webpack(config);
 app.use(webpackDevMiddleware(compiler, {
@@ -30,6 +34,10 @@ app.use(webpackDevMiddleware(compiler, {
   stats: {colors: true}
 }));
 
+
+// Configure Mongoose
+mongoose.connect(process.env.DB_URI, { useMongoClient: true });
+mongoose.Promise = global.Promise;
 
 
 // Check if a username is available
@@ -56,7 +64,7 @@ app.post('/users/new', async (req, res) => {
 
 // Gets username and password, check if they match, if true, return a token
 // Every other authentified action will send the token, it will verify the identity of the user
-app.post('/login', async (req, res) => {  
+app.post('/login', async (req, res) => {
   const user = await User.findOne({ username: req.body.username }); 
   if (user) { 
     bcrypt.compare(req.body.password, user.password, (err, resp) => {
@@ -84,11 +92,11 @@ app.post('/authenticate', async (req, res) => {
       res.status(200).send({id: decoded.id, username: decoded.username, message: "OK: Token valid"});
     } else {
       res.status(204).send("No content: Your token is invalid (too old?), you will have to log again");
-    };
+    }
   } else {
     res.status(204).send("No content: No token: Logged out or never logged in");
   }
-})
+});
 
 
 // Create a new poll and its choices in the DB
@@ -113,7 +121,7 @@ app.post('/polls/new', async (req, res) => {
     
   } else {
     res.status(401).send("Unauthorized: Only authenticated users can create a poll.")  
-  };
+  }
 });
 
 
@@ -145,7 +153,7 @@ app.delete('/polls/delete/:poll_id', async (req, res) => {
     
   } else {
     res.status(401).send("Unauthorized: Only authenticated users can delete a poll.")  
-  };
+  }
 });
 
 
@@ -169,8 +177,8 @@ app.get('/polls/:poll_id', async (req, res) => {
   // A Choice is a Moongoose document, it is not a normal object to which we can set properties
   // (using console.log() and typeof even changes the type!)
   // we have to use .lean() to get real plain JS objects
-  
-  const ip = req.headers['x-forwarded-for'].split(',')[0];
+
+  const ip = req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0] : "localhost";
   const ip_hash = await bcrypt.hash(ip, process.env.IP_SALT);
   
   for (let i = 0; i < choices.length; i++) {
@@ -189,7 +197,7 @@ app.get('/polls/:poll_id', async (req, res) => {
 app.post('/polls/choices/:choice_id/votes/new', async (req, res) => {  
   
   const choice_id = req.params.choice_id;
-  const ip = req.headers['x-forwarded-for'].split(',')[0];
+  const ip = req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0] : "localhost";
   const ip_hash = await bcrypt.hash(ip, process.env.IP_SALT);
   const vote = await Vote.findOne( { choice_id: choice_id, ip_hash: ip_hash });
   // We use a fixed salt, so we will always get the same ip_hash, that we can use to compare
@@ -227,7 +235,7 @@ app.post('/polls/:poll_id/choices/new', async (req, res) => {
     
   } else {
     res.status(401).send("Unauthorized: Only authenticated users can create a choice for a poll.") 
-  };
+  }
 });
 
 
@@ -240,4 +248,10 @@ const authenticate = async (token) => {
 // listen for requests
 const listener = app.listen(process.env.PORT, function () {
   console.log('Your app is listening on port ' + listener.address().port);
+});
+
+// Default route: send index.html, so the BrowserRouter can analyse
+// and display the element depending on the URL (CSR)
+app.get('*',function (req, res) {
+  res.sendFile(path.join(__dirname + '/../public/index.html'));
 });

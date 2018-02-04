@@ -21,7 +21,7 @@ class LogIn extends React.Component {
         // A response has a token, that prooves the identity of the user
         console.log(response);
         localStorage.setItem('token', response.data.token);
-        window.location.replace('https://vocxdona-apo.glitch.me/');
+        window.location.replace(location.origin);
       })
       .catch((error) => {
         console.log(error);

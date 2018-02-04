@@ -35,7 +35,7 @@ class SignUp extends React.Component {
   handleSubmit() {
     axios.post('/users/new', { username: this.state.username, password: this.state.password })
       .then((response) => {
-        window.location.replace('https://vocxdona-apo.glitch.me/#/login');
+        window.location.replace(location.origin+'/#/login');
       })
       .catch((error) => {
         console.log(error)
